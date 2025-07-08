@@ -8,22 +8,22 @@
 import SwiftUI
 
 struct ContentView: View {
-    var role: String?
+    @Environment(SessionManager.self) private var sessionManager
     
     var body: some View {
         TabView {
             Tab("Kõlakad", systemImage: "bubble") {
-                PostsView(title: "Kõlakad", endpoint: "")
+                PostsView(title: "Kõlakad", viewModel: PostsViewModel(endpoint: ""))
             }
             Tab("Kõva kumu", systemImage: "heart") {
-                PostsView(title: "Kõva kumu", endpoint: "/liked")
+                PostsView(title: "Kõva kumu", viewModel: PostsViewModel(endpoint: "/liked"))
             }
             Tab("Minu", systemImage: "rectangle.stack.badge.person.crop") {
-                PostsView(title: "Minu postitused", endpoint: "/my")
+                PostsView(title: "Minu postitused", viewModel: PostsViewModel(endpoint: "/my"))
             }
-            if (role == "ADMIN") {
+            if (sessionManager.currentUser?.role == "ADMIN") {
                 Tab("Ootel", systemImage: "document.badge.clock") {
-                    PostsView(title: "Ootel", endpoint: "/waitlist")
+                    PostsView(title: "Ootel", viewModel: PostsViewModel(endpoint: "/waitlist"))
                 }
             }
             Tab("Konto", systemImage: "person.crop.circle") {
@@ -35,6 +35,8 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView(role: "ADMIN")
-        .environment(SessionManager())
+    let sessionManager = SessionManager()
+    ContentView()
+        .environment(sessionManager)
+        .task { await sessionManager.getCurrentUser() }
 }

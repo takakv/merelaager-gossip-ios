@@ -8,16 +8,8 @@
 import SwiftUI
 
 struct PostsView: View {
-    let endpoint: String
     let title: String
-    
-    @State private var viewModel: PostsViewModel
-
-    init(title: String, endpoint: String) {
-        self.title = title
-        self.endpoint = endpoint
-        _viewModel = State(initialValue: PostsViewModel(endpoint: endpoint))
-    }
+    var viewModel: PostsViewModel
     
     @State private var showCreatePost = false
     
@@ -168,5 +160,8 @@ struct PostsView: View {
 }
 
 #Preview {
-    PostsView(title: "Postitused", endpoint: "")
+    let sessionManager = SessionManager()
+    PostsView(title: "Kõlakad", viewModel: PostsViewModel(endpoint: ""))
+        .environment(sessionManager)
+        .task { await sessionManager.getCurrentUser() }
 }

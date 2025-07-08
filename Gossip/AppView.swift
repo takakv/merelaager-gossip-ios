@@ -13,7 +13,7 @@ struct AppView: View {
     var body: some View {
         Group {
             if sessionManager.isLoggedIn {
-                ContentView(role: sessionManager.currentUser?.role)
+                ContentView()
             } else {
                 LoginView()
             }
