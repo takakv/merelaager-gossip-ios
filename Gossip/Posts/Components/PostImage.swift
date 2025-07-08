@@ -1,5 +1,5 @@
 //
-//  PostImageView.swift
+//  PostImage.swift
 //  Gossip
 //
 //  Created by Taaniel Kraavi on 08.07.2025.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct PostImageView: View {
+struct PostImage: View {
     let imageURL: URL
     
     var body: some View {

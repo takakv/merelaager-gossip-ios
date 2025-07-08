@@ -27,13 +27,13 @@ struct PostDetailView: View {
         VStack {
             if let post = post {
                 ScrollView {
-                    PostContentView(post: post)
+                    PostContent(post: post)
 
                     if let url = postImageURL {
-                        PostImageView(imageURL: url)
+                        PostImage(imageURL: url)
                     }
                     
-                    PostActionsView(
+                    PostActions(
                         post: post,
                         isAdmin: sessionManager.currentUser?.role == "ADMIN",
                         onPublish: publishPost,

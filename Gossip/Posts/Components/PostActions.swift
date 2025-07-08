@@ -1,5 +1,5 @@
 //
-//  PostActionsView.swift
+//  PostActions.swift
 //  Gossip
 //
 //  Created by Taaniel Kraavi on 08.07.2025.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct PostActionsView: View {
+struct PostActions: View {
     let post: Post
     let isAdmin: Bool
     let onPublish: () -> Void

@@ -1,5 +1,5 @@
 //
-//  PostContentView.swift
+//  PostContent.swift
 //  Gossip
 //
 //  Created by Taaniel Kraavi on 08.07.2025.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct PostContentView: View {
+struct PostContent: View {
     let post: Post
     
     var body: some View {
