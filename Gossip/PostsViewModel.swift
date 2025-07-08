@@ -12,7 +12,6 @@ class PostsViewModel {
     var posts: [Post] = []
     var currentPage: Int = 1
     var totalPages: Int = 1
-    var sessionManager: SessionManager?
     
     private var endpoint: String
     
@@ -35,15 +34,6 @@ class PostsViewModel {
         request.httpMethod = "GET"
 
         URLSession.shared.dataTask(with: request) { data, response, error in
-            if let httpResponse = response as? HTTPURLResponse {
-                if httpResponse.statusCode == 401 {
-                    DispatchQueue.main.async {
-                        self.sessionManager?.signOut()
-                    }
-                    return
-                }
-            }
-            
             if let error = error {
                 print("Network error: \(error.localizedDescription)")
                 return

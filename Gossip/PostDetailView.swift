@@ -35,7 +35,7 @@ struct PostDetailView: View {
                     
                     PostActionsView(
                         post: post,
-                        isAdmin: sessionManager.role == "ADMIN",
+                        isAdmin: sessionManager.currentUser?.role == "ADMIN",
                         onPublish: publishPost,
                         onDelete: { showDeleteConfirmation = true }
                     )

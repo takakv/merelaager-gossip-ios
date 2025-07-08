@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    var role: String
+    var role: String?
     
     var body: some View {
         TabView {

@@ -8,18 +8,21 @@
 import SwiftUI
 
 struct AppView: View {
-    @State private var sessionManager = SessionManager()
+    @Environment(SessionManager.self) private var sessionManager
     
     var body: some View {
-        if sessionManager.isLoggedIn {
-            ContentView(role: sessionManager.role)
-                .environment(sessionManager)
-        } else {
-            AuthView(sessionManager: sessionManager)
+        Group {
+            if sessionManager.isLoggedIn {
+                ContentView(role: sessionManager.currentUser?.role)
+            } else {
+                LoginView()
+            }
         }
+        .task { await sessionManager.getCurrentUser() }
     }
 }
 
 #Preview {
     AppView()
+        .environment(SessionManager())
 }

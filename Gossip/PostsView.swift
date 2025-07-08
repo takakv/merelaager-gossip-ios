@@ -10,7 +10,6 @@ import SwiftUI
 struct PostsView: View {
     let endpoint: String
     let title: String
-    @Environment(SessionManager.self) var sessionManager
     
     @State private var viewModel: PostsViewModel
 
@@ -26,9 +25,9 @@ struct PostsView: View {
         ZStack {
             VStack {
                 NavigationStack {
-                    if (viewModel.posts.isEmpty) {
-                        Text("Postitusi pole.")
-                    }
+//                    if (viewModel.posts.isEmpty) {
+//                        Text("Postitusi pole.")
+//                    }
                     
                     List(viewModel.posts) { post in
                         NavigationLink {
@@ -85,7 +84,6 @@ struct PostsView: View {
                 }
             }
             .onAppear {
-                viewModel.sessionManager = sessionManager
                 viewModel.fetchPosts()
             }
             VStack {
@@ -171,5 +169,4 @@ struct PostsView: View {
 
 #Preview {
     PostsView(title: "Postitused", endpoint: "")
-        .environment(SessionManager())
 }
