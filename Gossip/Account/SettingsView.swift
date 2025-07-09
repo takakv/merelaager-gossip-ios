@@ -45,7 +45,7 @@ struct SettingsView: View {
                     }
                     .tint(.blue)
                 } footer: {
-                        Text("Pärast rakendusest välja logimist pead sa teiste postituste nägemiseks uuesti sisse logima.")
+                        Text("Pärast rakendusest väljalogimist pead sa postituste nägemiseks uuesti sisse logima.")
                             .font(.footnote)
                             .foregroundColor(.secondary)
                     }

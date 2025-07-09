@@ -20,6 +20,18 @@ struct CreatePostView: View {
     @State private var imageData: Data?
     @State private var fileName: String?
     @State private var mimeType: String?
+    
+    private var isContentOrImagePresent: Bool {
+        if !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return true
+        }
+
+        if imageData != nil, fileName != nil, mimeType != nil {
+            return true
+        }
+        
+        return false
+    }
 
     var body: some View {
         NavigationView {
@@ -106,7 +118,7 @@ struct CreatePostView: View {
                             await submitPost()
                         }
                     }
-                    .disabled(isSubmitting)
+                    .disabled(isSubmitting || title.isEmpty || !isContentOrImagePresent)
                 }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Tühista") {
@@ -134,7 +146,7 @@ struct CreatePostView: View {
             return UploadImage(data: data, fileName: name, mimeType: type)
         }()
         
-        if content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && image == nil {
+        if (!isContentOrImagePresent) {
             errorMessage = "Postitus peab sisaldama vähemalt sisu või pilti!"
             return
         }
