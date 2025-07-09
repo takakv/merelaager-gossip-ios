@@ -2,7 +2,6 @@
 //  CreatePostView.swift
 //  Gossip
 //
-//  Created by Taaniel Kraavi on 06.07.2025.
 //
 
 import SwiftUI

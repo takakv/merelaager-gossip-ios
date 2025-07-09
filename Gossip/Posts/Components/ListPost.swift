@@ -2,7 +2,6 @@
 //  ListPost.swift
 //  Gossip
 //
-//  Created by Taaniel Kraavi on 09.07.2025.
 //
 
 import SwiftUI

@@ -2,7 +2,6 @@
 //  AppView.swift
 //  Gossip
 //
-//  Created by Taaniel Kraavi on 05.07.2025.
 //
 
 import SwiftUI
