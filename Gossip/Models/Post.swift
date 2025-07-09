@@ -33,6 +33,6 @@ struct Post: Identifiable, Decodable, Equatable {
     let imageId: String?
     let createdAt: Date
     let published: Bool
-    let likeCount: Int
-    let isLiked: Bool
+    var likeCount: Int
+    var isLiked: Bool
 }

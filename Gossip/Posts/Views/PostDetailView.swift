@@ -36,7 +36,8 @@ struct PostDetailView: View {
                         post: post,
                         isAdmin: sessionManager.currentUser?.role == "ADMIN",
                         onPublish: publishPost,
-                        onDelete: { showDeleteConfirmation = true }
+                        onDelete: { showDeleteConfirmation = true },
+                        onLikeToggle: toggleLike
                     )
                     .padding(.top)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -104,10 +105,42 @@ struct PostDetailView: View {
             errorMessage = error.localizedDescription
         }
     }
+    
+    func toggleLike() async {
+        guard var currentPost = post else { return }
+        guard let userId = sessionManager.currentUser?.id else { return }
+        
+        let wasLiked = currentPost.isLiked
+        
+        currentPost.isLiked.toggle()
+        currentPost.likeCount += currentPost.isLiked ? 1 : -1
+        post = currentPost
+
+        do {
+            if (wasLiked) {
+                try await PostService.unlikePost(postId: postId, userId: userId)
+                print("DEBUG: Unliked post \(postId)")
+            } else {
+                try await PostService.likePost(postId: postId, userId: userId)
+                print("DEBUG: Liked post \(postId)")
+            }
+        } catch {
+            currentPost.isLiked = wasLiked
+            currentPost.likeCount += wasLiked ? 1 : -1
+            post = currentPost
+
+            print("DEBUG: Failed to toggle like - \(error)")
+            errorMessage = error.localizedDescription
+        }
+        
+        viewModel.updatePost(currentPost)
+    }
 }
 
 #Preview {
     let mockViewModel = PostsViewModel(endpoint: "/mock")
+    let sessionManager = SessionManager()
     PostDetailView(postId: "3927cd13-1dae-4fd3-b93d-f5003610fcb2", viewModel: mockViewModel)
-        .environment(SessionManager())
+        .environment(sessionManager)
+        .task { await sessionManager.getCurrentUser() }
 }

@@ -23,6 +23,12 @@ class PostsViewModel {
         posts.removeAll { $0.id == id }
     }
     
+    func updatePost(_ updatedPost: Post) {
+        if let index = posts.firstIndex(where: { $0.id == updatedPost.id }) {
+            posts[index] = updatedPost
+        }
+    }
+    
     func fetchPosts(reset: Bool = false) {
         guard !isLoading else { return }
         

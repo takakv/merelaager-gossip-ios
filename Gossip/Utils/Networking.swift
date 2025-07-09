@@ -17,7 +17,7 @@ enum NetworkingError: Error {
     case emptyResponseButContentExpected
 }
 
-struct NoContent: Decodable {}
+struct NoContent: Encodable, Decodable {}
 
 enum Networking {
     static func get<T: Decodable, F: Decodable>(
@@ -65,6 +65,28 @@ enum Networking {
         return try await perform(request, failType: failType)
     }
     
+    static func put<T: Decodable, B: Encodable, F: Decodable>(
+        _ url: URL,
+        body: B,
+        failType: F.Type
+    ) async throws -> T {
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+
+        if !(body is NoContent) {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            do {
+                request.httpBody = try JSONEncoder().encode(body)
+            } catch let error as EncodingError {
+                throw NetworkingError.encodingFailed(innerError: error)
+            } catch {
+                throw NetworkingError.otherError(innerError: error)
+            }
+        }
+
+        return try await perform(request, failType: failType)
+    }
+    
     static func delete<T: Decodable, F: Decodable>(
         _ url: URL,
         failType: F.Type
@@ -95,6 +117,10 @@ enum Networking {
                     } else {
                         throw NetworkingError.emptyResponseButContentExpected
                     }
+                }
+
+                if T.self == NoContent.self {
+                    return NoContent() as! T
                 }
 
                 do {

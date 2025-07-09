@@ -128,6 +128,16 @@ struct PostService {
         let url = Constants.baseURL.appendingPathComponent("posts/\(postId)")
         let _: NoContent = try await Networking.delete(url, failType: DeletePostFailResponseData.self)
     }
+    
+    static func likePost(postId: String, userId: String) async throws {
+        let url = Constants.baseURL.appendingPathComponent("posts/\(postId)/likes/\(userId)")
+        let _: NoContent = try await Networking.put(url, body: NoContent(), failType: DeletePostFailResponseData.self)
+    }
+    
+    static func unlikePost(postId: String, userId: String) async throws {
+        let url = Constants.baseURL.appendingPathComponent("posts/\(postId)/likes/\(userId)")
+        let _: NoContent = try await Networking.delete(url, failType: DeletePostFailResponseData.self)
+    }
 }
 
 extension Data {
