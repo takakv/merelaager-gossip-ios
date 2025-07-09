@@ -27,7 +27,7 @@ struct PostDataContainer: Decodable {
     let post: Post
 }
 
-struct Post: Identifiable, Decodable {
+struct Post: Identifiable, Decodable, Equatable {
     let id: String
     let title: String
     let content: String?

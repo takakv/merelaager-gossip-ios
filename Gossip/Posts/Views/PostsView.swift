@@ -9,7 +9,7 @@ import SwiftUI
 
 struct PostsView: View {
     let title: String
-    var viewModel: PostsViewModel
+    @State var viewModel: PostsViewModel
     
     @State private var showCreatePost = false
     
@@ -25,17 +25,19 @@ struct PostsView: View {
                         PostListView(viewModel: viewModel)
                     }
 
-                    PaginationBar(
-                        currentPage: viewModel.currentPage,
-                        totalPages: viewModel.totalPages,
-                        onPageSelect: { page in
-                            viewModel.goToPage(page)
-                        }
-                    )
+//                    PaginationBar(
+//                        currentPage: viewModel.currentPage,
+//                        totalPages: viewModel.totalPages,
+//                        onPageSelect: { page in
+//                            viewModel.goToPage(page)
+//                        }
+//                    )
                 }
                 .navigationTitle(title)
                 .onAppear {
-                    viewModel.fetchPosts()
+                    if viewModel.posts.isEmpty {
+                        viewModel.resetAndFetch()
+                    }
                 }
             }
 
