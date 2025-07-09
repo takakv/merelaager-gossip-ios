@@ -49,12 +49,7 @@ struct UploadImageFailResponseData: Decodable {
     let acceptedTypes: [String]?
 }
 
-typealias CreatePostResponse = JSendResponse<CreatePostResponseData>
 typealias UploadImageResponse = JSendResponse<UploadImageResponseData>
-
-typealias CreatePostFailResponse = JSendResponse<CreatePostFailResponseData>
-typealias PublishPostFailResponse = JSendResponse<PublishPostFailResponseData>
-typealias DeletePostFailResponse = JSendResponse<DeletePostFailResponseData>
 typealias UploadImageFailResponse = JSendResponse<UploadImageFailResponseData>
 
 struct UploadImage {
@@ -129,47 +124,9 @@ struct PostService {
         let _: NoContent = try await Networking.patch(url, body: body, failType: PublishPostFailResponseData.self)
     }
     
-    static func deletePost(postId: String, completion: @escaping (Result<Bool, Error>) -> Void) {
+    static func deletePost(postId: String) async throws {
         let url = Constants.baseURL.appendingPathComponent("posts/\(postId)")
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "DELETE"
-        
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("Network error occurred: \(error.localizedDescription)")
-                completion(.failure(error))
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                print("Unexpected response type: \(type(of: response))")
-                completion(.failure(URLError(.badServerResponse)))
-                return
-            }
-            
-            if !(200...299).contains(httpResponse.statusCode) {
-                guard let data = data else {
-                    print("No data received")
-                    completion(.failure(URLError(.badServerResponse)))
-                    return
-                }
-                
-                do {
-                    let response = try JSONDecoder().decode(DeletePostFailResponse.self, from: data)
-                    print("Server error: HTTP \(httpResponse.statusCode)")
-                    print(response)
-                    completion(.failure(URLError(.badServerResponse)))
-                } catch {
-                    print("Decoding error: \(error)")
-                    completion(.failure(error))
-                }
-                
-                return
-            }
-
-            completion(.success(true))
-        }.resume()
+        let _: NoContent = try await Networking.delete(url, failType: DeletePostFailResponseData.self)
     }
 }
 

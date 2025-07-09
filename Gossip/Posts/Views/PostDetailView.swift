@@ -62,7 +62,9 @@ struct PostDetailView: View {
                 }
             )
         .alert("Kustuta postitus?", isPresented: $showDeleteConfirmation) {
-            Button("Kustuta", role: .destructive, action: deletePost)
+            Button("Kustuta", role: .destructive) {
+                Task { await deletePost() }
+            }
             Button("Tühista", role: .cancel) { }
         } message: {
             Text("Pärast kustutamist ei saa sa postitust enam taastada.")
@@ -92,17 +94,14 @@ struct PostDetailView: View {
         }
     }
     
-    func deletePost() {
-        PostService.deletePost(postId: postId) { result in
-            switch result {
-            case .success:
-                DispatchQueue.main.async {
-                    viewModel.deletePost(withId: postId)
-                    dismiss()
-                }
-            case .failure(let error):
-                print(error)
-            }
+    func deletePost() async {
+        do {
+            try await PostService.deletePost(postId: postId)
+            viewModel.deletePost(withId: postId)
+            dismiss()
+        } catch {
+            print("DEBUG: \(error)")
+            errorMessage = error.localizedDescription
         }
     }
 }
