@@ -18,7 +18,8 @@ struct CreatePostFailResponseData: Decodable {
 
 struct CreatePostRequestBody: Codable {
     let title: String
-    let content: String
+    let content: String?
+    let imageId: String?
 }
 
 struct PublishPostRequestBody: Codable {
@@ -40,118 +41,87 @@ struct DeletePostFailResponseData: Decodable {
     let message: String
 }
 
+struct UploadImageResponseData: Decodable {
+    let fileName: String
+}
+
+struct UploadImageFailResponseData: Decodable {
+    let message: String
+    let acceptedTypes: [String]?
+}
+
 typealias CreatePostResponse = JSendResponse<CreatePostResponseData>
+typealias UploadImageResponse = JSendResponse<UploadImageResponseData>
+
 typealias CreatePostFailResponse = JSendResponse<CreatePostFailResponseData>
 typealias PublishPostFailResponse = JSendResponse<PublishPostFailResponseData>
 typealias DeletePostFailResponse = JSendResponse<DeletePostFailResponseData>
+typealias UploadImageFailResponse = JSendResponse<UploadImageFailResponseData>
+
+struct UploadImage {
+    let data: Data
+    let fileName: String
+    let mimeType: String
+}
 
 struct PostService {
-    static func fetchPost(postId: String, completion: @escaping (Result<Post, Error>) -> Void) {
+    static func fetchPost(postId: String) async throws -> Post {
         let url = Constants.baseURL.appendingPathComponent("posts/\(postId)")
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("Network error occurred: \(error.localizedDescription)")
-                completion(.failure(error))
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                print("Unexpected response type: \(type(of: response))")
-                completion(.failure(URLError(.badServerResponse)))
-                return
-            }
-            
-            guard let data = data else {
-                print("No data received")
-                return
-            }
-            
-            if !(200...299).contains(httpResponse.statusCode) {
-                do {
-                    let response = try JSONDecoder().decode(FetchPostFailResponseData.self, from: data)
-                    print("Server error: HTTP \(httpResponse.statusCode)")
-                    print(response)
-                    completion(.failure(URLError(.badServerResponse)))
-                    return
-                } catch {
-                    print("Decoding error: \(error)")
-                    completion(.failure(error))
-                    return
-                }
-            }
-            
-            let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .iso8601WithFractionalSeconds
-            
-            do {
-                let response = try decoder.decode(FetchPostResponse.self, from: data)
-                completion(.success(response.data.post))
-            } catch {
-                print("Decoding error: \(error)")
-                completion(.failure(error))
-            }
-        }.resume()
+        let response: PostDataContainer = try await Networking.get(
+            url,
+            failType: FetchPostFailResponseData.self
+        )
+        return response.post
     }
     
-    static func createPost(title: String, content: String, completion: @escaping (Result<CreatePostResponse, Error>) -> Void) {
-        let url = Constants.baseURL.appendingPathComponent("posts")
-        
+    static func uploadImage(_ image: UploadImage, to url: URL) async throws -> UploadImageResponse {
+        let boundary = UUID().uuidString
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let body = CreatePostRequestBody(title: title, content: content)
-        do {
-            request.httpBody = try JSONEncoder().encode(body)
-        } catch {
-            completion(.failure(error))
-            return
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        var body = Data()
+        body.append("--\(boundary)\r\n")
+        body.append("Content-Disposition: form-data; name=\"image\"; filename=\"\(image.fileName)\"\r\n")
+        body.append("Content-Type: \(image.mimeType)\r\n\r\n")
+        body.append(image.data)
+        body.append("\r\n--\(boundary)--\r\n")
+        request.httpBody = body
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            print("DEBUG: Did not receive HTTP response")
+            throw URLError(.badServerResponse)
         }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let failure = try? JSONDecoder().decode(UploadImageFailResponse.self, from: data)
+            print("DEBUG: Image upload failed: \(failure?.data.message ?? "Unknown error")")
+            throw URLError(.badServerResponse)
+        }
+
+        return try JSONDecoder().decode(UploadImageResponse.self, from: data)
+    }
+    
+    static func createPost(title: String, content: String?, image: UploadImage?) async throws -> String {
+        var imageId: String? = nil
+
+        if let image = image {
+            let uploadURL = Constants.baseURL.appendingPathComponent("posts/images")
+            let response = try await uploadImage(image, to: uploadURL)
+            imageId = response.data.fileName
+        }
+
+        let url = Constants.baseURL.appendingPathComponent("posts")
+        let body = CreatePostRequestBody(title: title, content: content, imageId: imageId)
+        let response: CreatePostResponseData = try await Networking.post(
+            url,
+            body: body,
+            failType: CreatePostFailResponseData.self
+        )
         
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("Network error occurred: \(error.localizedDescription)")
-                completion(.failure(error))
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                print("Unexpected response type: \(type(of: response))")
-                completion(.failure(URLError(.badServerResponse)))
-                return
-            }
-            
-            guard let data = data else {
-                print("No data received")
-                return
-            }
-            
-            if !(200...299).contains(httpResponse.statusCode) {
-                do {
-                    let response = try JSONDecoder().decode(CreatePostFailResponse.self, from: data)
-                    print("Server error: HTTP \(httpResponse.statusCode)")
-                    print(response)
-                    completion(.failure(URLError(.badServerResponse)))
-                    return
-                } catch {
-                    print("Decoding error: \(error)")
-                    completion(.failure(error))
-                    return
-                }
-            }
-            
-            do {
-                let response = try JSONDecoder().decode(CreatePostResponse.self, from: data)
-                completion(.success(response))
-            } catch {
-                print("Decoding error: \(error)")
-                completion(.failure(error))
-            }
-        }.resume()
+        return response.postId
     }
     
     static func publishPost(postId: String, completion: @escaping (Result<Bool, Error>) -> Void) {
@@ -247,5 +217,13 @@ struct PostService {
 
             completion(.success(true))
         }.resume()
+    }
+}
+
+extension Data {
+    mutating func append(_ string: String) {
+        if let data = string.data(using: .utf8) {
+            append(data)
+        }
     }
 }

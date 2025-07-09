@@ -1,0 +1,132 @@
+//
+//  Networking.swift
+//  Gossip
+//
+//  Created by Taaniel Kraavi on 09.07.2025.
+//
+
+import Foundation
+
+enum NetworkingError: Error {
+    case encodingFailed(innerError: EncodingError)
+    case decodingFailed(innerError: DecodingError)
+    case invalidStatusCode(statusCode: Int)
+    case requestFailed(innerError: URLError)
+    case jsendFail(statusCode: Int, data: Any)
+    case jsendError(statusCode: Int, message: String)
+    case otherError(innerError: Error)
+}
+
+enum Networking {
+    static func get<T: Decodable, F: Decodable>(
+        _ url: URL,
+        failType: F.Type
+    ) async throws -> T {
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        return try await perform(request, failType: failType)
+    }
+    
+    static func post<T: Decodable, B: Encodable, F: Decodable>(
+        _ url: URL,
+        body: B,
+        failType: F.Type
+    ) async throws -> T {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        do {
+            request.httpBody = try JSONEncoder().encode(body)
+        } catch let error as EncodingError {
+            throw NetworkingError.encodingFailed(innerError: error)
+        } catch {
+            throw NetworkingError.otherError(innerError: error)
+        }
+        return try await perform(request, failType: failType)
+    }
+    
+    static func patch<T: Decodable, B: Encodable, F: Decodable>(
+        _ url: URL,
+        body: B,
+        failType: F.Type
+    ) async throws -> T {
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        do {
+            request.httpBody = try JSONEncoder().encode(body)
+        } catch let error as EncodingError {
+            throw NetworkingError.encodingFailed(innerError: error)
+        } catch {
+            throw NetworkingError.otherError(innerError: error)
+        }
+        return try await perform(request, failType: failType)
+    }
+    
+    static func delete<T: Decodable, F: Decodable>(
+        _ url: URL,
+        failType: F.Type
+    ) async throws -> T {
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        return try await perform(request, failType: failType)
+    }
+    
+    private static func perform<T: Decodable, F: Decodable>(
+        _ request: URLRequest,
+        failType: F.Type
+    ) async throws -> T {
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw NetworkingError.invalidStatusCode(statusCode: -1)
+            }
+
+            let statusCode = httpResponse.statusCode
+            
+            switch statusCode {
+            case 200...299:
+                do {
+                    let decoder = JSONDecoder()
+                    decoder.dateDecodingStrategy = .iso8601WithFractionalSeconds
+                    
+                    let response = try decoder.decode(JSendResponse<T>.self, from: data)
+                    return response.data
+                } catch let decodingError as DecodingError {
+                    throw NetworkingError.decodingFailed(innerError: decodingError)
+                } catch {
+                    throw NetworkingError.otherError(innerError: error)
+                }
+                
+            case 400...499:
+                do {
+                    let failResponse = try JSONDecoder().decode(JSendResponse<F>.self, from: data)
+                    throw NetworkingError.jsendFail(statusCode: statusCode, data: failResponse.data)
+                } catch let decodingError as DecodingError {
+                    throw NetworkingError.decodingFailed(innerError: decodingError)
+                } catch {
+                    throw NetworkingError.otherError(innerError: error)
+                }
+
+            case 500...599:
+                do {
+                    let errorResponse = try JSONDecoder().decode(JSendError.self, from: data)
+                    throw NetworkingError.jsendError(statusCode: statusCode, message: errorResponse.message)
+                } catch let decodingError as DecodingError {
+                    throw NetworkingError.decodingFailed(innerError: decodingError)
+                } catch {
+                    throw NetworkingError.otherError(innerError: error)
+                }
+
+            default:
+                throw NetworkingError.invalidStatusCode(statusCode: statusCode)
+            }
+            
+        } catch let urlError as URLError {
+            throw NetworkingError.requestFailed(innerError: urlError)
+        } catch {
+            throw NetworkingError.otherError(innerError: error)
+        }
+    }
+}

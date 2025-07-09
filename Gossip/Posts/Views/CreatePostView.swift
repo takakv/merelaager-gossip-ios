@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 struct CreatePostView: View {
     @Environment(\.dismiss) var dismiss
@@ -14,6 +15,12 @@ struct CreatePostView: View {
     
     @State private var isSubmitting = false
     @State private var errorMessage: String?
+    
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var selectedImage: Image?
+    @State private var imageData: Data?
+    @State private var fileName: String?
+    @State private var mimeType: String?
 
     var body: some View {
         NavigationView {
@@ -25,6 +32,11 @@ struct CreatePostView: View {
                         .padding(10)
                         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.3)))
                     
+                    if let errorMessage = errorMessage {
+                        Text(errorMessage)
+                            .foregroundColor(.red)
+                    }
+                    
                     Text("Sisu")
                         .font(.headline)
                     TextEditor(text: $content)
@@ -32,19 +44,68 @@ struct CreatePostView: View {
                         .padding(10)
                         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.3)))
                     
-                    if let errorMessage = errorMessage {
-                        Text(errorMessage)
-                            .foregroundColor(.red)
+                    Text("Pilt")
+                        .font(.headline)
+                    PhotosPicker(selection: $selectedPhotoItem, matching: .images, photoLibrary: .shared()) {
+                        HStack {
+                            Image(systemName: "photo")
+                            Text("Vali pilt")
+                        }
+                        .padding()
+                        .background(Color.pink.opacity(0.1))
+                        .cornerRadius(8)
                     }
-                    
-                    Spacer()
+
+                    if let selectedImage = selectedImage {
+                        selectedImage
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxHeight: 200)
+                            .cornerRadius(8)
+                    }
                 }
                 .padding()
+            }
+            .onChange(of: selectedPhotoItem) {
+                if let selectedPhotoItem {
+                    Task {
+                        do {
+                            if let data = try await selectedPhotoItem.loadTransferable(type: Data.self),
+                               let uiImage = UIImage(data: data) {
+                                
+                                selectedImage = Image(uiImage: uiImage)
+                                imageData = data
+                                
+                                let type = mimeType(for: data)
+                                mimeType = type
+                                
+                                // The server will name the file after the hash anyways, so we do not care about the file name.
+                                if let ext = type.components(separatedBy: "/").last {
+                                    fileName = "\(UUID().uuidString).\(ext)"
+                                } else {
+                                    fileName = nil
+                                }
+
+                            } else {
+                                imageData = nil
+                                fileName = nil
+                                mimeType = nil
+                            }
+                        } catch {
+                            print("DEBUG: Failed loading image: \(error)")
+                            imageData = nil
+                            fileName = nil
+                            mimeType = nil
+                        }
+                    }
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Postita") {
-                        submitPost()
+                        Task {
+                            await submitPost()
+                        }
                     }
                     .disabled(isSubmitting)
                 }
@@ -57,29 +118,57 @@ struct CreatePostView: View {
         }
     }
     
-    func submitPost() {
-        guard !title.isEmpty, !content.isEmpty else {
-            errorMessage = "Kõik väljad on kohustuslikud!"
+    func submitPost() async {
+        errorMessage = nil
+        
+        if (title.isEmpty) {
+            errorMessage = "Pealkiri on puudu!"
             return
         }
-
-        isSubmitting = true
-        errorMessage = nil
-
-        PostService.createPost(title: title, content: content) { result in
-            DispatchQueue.main.async {
-                isSubmitting = false
-                switch result {
-                case .success:
-                    dismiss()
-                case .failure(let error):
-                    errorMessage = error.localizedDescription
-                }
+        
+        let image: UploadImage? = {
+            guard let data = imageData,
+                  let name = fileName,
+                  let type = mimeType else {
+                return nil
             }
+            return UploadImage(data: data, fileName: name, mimeType: type)
+        }()
+        
+        if content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && image == nil {
+            errorMessage = "Postitus peab sisaldama vähemalt sisu või pilti!"
+            return
+        }
+        
+        isSubmitting = true
+        
+        do {
+            let createdPostId = try await PostService.createPost(title: title, content: content, image: image)
+            print("DEBUG: Created post with ID \(createdPostId)")
+            dismiss()
+        } catch {
+            print("DEBUG: \(error)")
+            errorMessage = error.localizedDescription
+        }
+        
+        isSubmitting = false
+    }
+    
+    func mimeType(for data: Data) -> String {
+        var byte: UInt8 = 0
+        data.copyBytes(to: &byte, count: 1)
+
+        switch byte {
+        case 0xFF: return "image/jpeg"
+        case 0x89: return "image/png"
+        case 0x47: return "image/gif"
+        case 0x49, 0x4D: return "image/tiff"
+        default:   return "application/octet-stream"
         }
     }
 }
 
 #Preview {
     CreatePostView()
+        .tint(.pink)
 }

@@ -50,8 +50,8 @@ struct PostDetailView: View {
                 Text("No post found")
             }
         }
-        .onAppear {
-            fetchPost()
+        .task {
+            await fetchPost()
         }
         .frame(maxWidth: .infinity)
         .gesture(
@@ -72,15 +72,13 @@ struct PostDetailView: View {
         .tint(nil)
     }
     
-    func fetchPost() {
-        PostService.fetchPost(postId: postId) { result in
-            switch result {
-            case .success(let fetchedPost):
-                post = fetchedPost
-            case .failure(let error):
-                print(error)
-                errorMessage = error.localizedDescription
-            }
+    func fetchPost() async {
+        do {
+            let fetchedPost = try await PostService.fetchPost(postId: postId)
+            post = fetchedPost
+        } catch {
+            print("DEBUG: \(error)")
+            errorMessage = error.localizedDescription
         }
     }
     
