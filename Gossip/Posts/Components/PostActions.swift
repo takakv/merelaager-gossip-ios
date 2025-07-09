@@ -9,7 +9,7 @@ import SwiftUI
 struct PostActions: View {
     let post: Post
     let isAdmin: Bool
-    let onPublish: () -> Void
+    let onPublish: () async -> Void
     let onDelete: () -> Void
     
     var body: some View {
@@ -24,9 +24,9 @@ struct PostActions: View {
                 Spacer()
                 
                 if !post.published {
-                    Button("Kinnita", action: onPublish)
-                        .padding(.trailing, 8)
-                        .tint(.green)
+                    Button("Kinnita") { Task { await onPublish() } }
+                    .padding(.trailing, 8)
+                    .tint(.green)
                 }
                 
                 Button("Kustuta", role: .destructive, action: onDelete)
@@ -38,7 +38,8 @@ struct PostActions: View {
 }
 
 #Preview {
-    let mockViewModel = PostsViewModel(endpoint: "")
-    PostDetailView(postId: "3927cd13-1dae-4fd3-b93d-f5003610fcb2", viewModel: mockViewModel)
-        .environment(SessionManager())
+    let sessionManager = SessionManager()
+    PostsView(title: "Ootel", viewModel: PostsViewModel(endpoint: "/waitlist"))
+        .environment(sessionManager)
+        .task { await sessionManager.getCurrentUser() }
 }

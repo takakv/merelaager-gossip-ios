@@ -123,56 +123,10 @@ struct PostService {
         return response.postId
     }
     
-    static func publishPost(postId: String, completion: @escaping (Result<Bool, Error>) -> Void) {
+    static func publishPost(postId: String) async throws {
         let url = Constants.baseURL.appendingPathComponent("posts/\(postId)")
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "PATCH"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
         let body = PublishPostRequestBody(published: true)
-        do {
-            request.httpBody = try JSONEncoder().encode(body)
-        } catch {
-            completion(.failure(error))
-            return
-        }
-        
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("Network error occurred: \(error.localizedDescription)")
-                completion(.failure(error))
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                print("Unexpected response type: \(type(of: response))")
-                completion(.failure(URLError(.badServerResponse)))
-                return
-            }
-            
-            if !(200...299).contains(httpResponse.statusCode) {
-                guard let data = data else {
-                    print("No data received")
-                    completion(.failure(URLError(.badServerResponse)))
-                    return
-                }
-                
-                do {
-                    let response = try JSONDecoder().decode(PublishPostFailResponse.self, from: data)
-                    print("Server error: HTTP \(httpResponse.statusCode)")
-                    print(response)
-                    completion(.failure(URLError(.badServerResponse)))
-                } catch {
-                    print("Decoding error: \(error)")
-                    completion(.failure(error))
-                }
-                
-                return
-            }
-
-            completion(.success(true))
-        }.resume()
+        let _: NoContent = try await Networking.patch(url, body: body, failType: PublishPostFailResponseData.self)
     }
     
     static func deletePost(postId: String, completion: @escaping (Result<Bool, Error>) -> Void) {

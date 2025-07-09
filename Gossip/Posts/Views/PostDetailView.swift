@@ -81,17 +81,14 @@ struct PostDetailView: View {
         }
     }
     
-    func publishPost() {
-        PostService.publishPost(postId: postId) { result in
-            switch result {
-            case .success:
-                DispatchQueue.main.async {
-                    viewModel.deletePost(withId: postId)
-                    dismiss()
-                }
-            case .failure(let error):
-                print(error)
-            }
+    func publishPost() async {
+        do {
+            try await PostService.publishPost(postId: postId)
+            viewModel.deletePost(withId: postId)
+            dismiss()
+        } catch {
+            print("DEBUG: \(error)")
+            errorMessage = error.localizedDescription
         }
     }
     

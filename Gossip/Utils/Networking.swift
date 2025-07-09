@@ -14,7 +14,10 @@ enum NetworkingError: Error {
     case jsendFail(statusCode: Int, data: Any)
     case jsendError(statusCode: Int, message: String)
     case otherError(innerError: Error)
+    case emptyResponseButContentExpected
 }
+
+struct NoContent: Decodable {}
 
 enum Networking {
     static func get<T: Decodable, F: Decodable>(
@@ -86,6 +89,14 @@ enum Networking {
             
             switch statusCode {
             case 200...299:
+                if statusCode == 204 {
+                    if T.self == NoContent.self {
+                        return NoContent() as! T
+                    } else {
+                        throw NetworkingError.emptyResponseButContentExpected
+                    }
+                }
+
                 do {
                     let decoder = JSONDecoder()
                     decoder.dateDecodingStrategy = .iso8601WithFractionalSeconds
