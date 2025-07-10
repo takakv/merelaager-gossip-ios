@@ -17,26 +17,27 @@ struct NewPasswordView: View {
     var body: some View {
         NavigationView {
             VStack {
-                List {
-                    VStack {
-                        Image(systemName: "key")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 60, height: 60)
-                            .foregroundColor(.pink)
-                        
-                        Text("Uus salasõna")
-                            .font(.title)
-                            .bold()
-                            .padding(.bottom, 12)
-
-                        Text("Võimalusel lase Apple'i „Passwords“ rakendusel salasõna genereerida.")
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 36)
+                Form {
+                    Section {
+                        VStack {
+                            Image(systemName: "key")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 60, height: 60)
+                                .foregroundColor(.pink)
+                                .padding(.top, 8)
+                            
+                            Text("Uus salasõna")
+                                .font(.title)
+                                .bold()
+                                .padding(.bottom, 4)
+                            
+                            Text("Võimalusel lase Apple'i „Passwords“ rakendusel salasõna genereerida.")
+                                .padding(.bottom, 8)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .multilineTextAlignment(.center)
                     }
-                    .frame(maxWidth: .infinity)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
                     
                     if let errorMessage = errorMessage {
                         Section {
@@ -56,28 +57,22 @@ struct NewPasswordView: View {
                 }
                 .listStyle(.insetGrouped)
                 
-                VStack {
-                    Button {
-                        Task {
-                            await changePassword()
-                        }
-                    } label: {
-                        Text("Muuda salasõna")
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 36)
+                Button {
+                    Task {
+                        await changePassword()
                     }
-                    .buttonStyle(.borderedProminent)
-                    .cornerRadius(14)
-                    .disabled(newPassword.isEmpty || newPassword != repeatPassword)
+                } label: {
+                    Text("Muuda salasõna")
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 36)
                 }
+                .buttonStyle(.borderedProminent)
+                .cornerRadius(14)
+                .disabled(newPassword.isEmpty || newPassword != repeatPassword)
                 .padding(.horizontal, 36)
                 .padding(.top, 16)
                 .padding(.bottom, 36)
-                .background(
-                    Color(UIColor.systemGroupedBackground)
-                        .ignoresSafeArea(edges: .bottom)
-                )
             }
             .background(Color(UIColor.systemGroupedBackground))
             .toolbar {
@@ -103,15 +98,20 @@ struct NewPasswordView: View {
     func changePassword() async {
         if (newPassword.count < 8) {
             errorMessage = "Salasõna peab olema vähemalt 8 tähemärki pikk!"
+            return
         }
         
         if !isValidPassword(newPassword) {
             errorMessage = "Salasõna peab sisaldama vähemalt ühte väikest tähte, ühte suurt tähte ja ühte numbrit!"
+            return
         }
         
         do {
             try await AccountService.changePassword(newPassword: newPassword)
             showSuccessAlert = true
+        } catch let error as JSendFailError<ChangePasswordFailData> {
+            print("DEBUG: \(error)")
+            errorMessage = error.data.message
         } catch {
             print("DEBUG: \(error)")
             errorMessage = error.localizedDescription
