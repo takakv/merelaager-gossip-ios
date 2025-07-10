@@ -24,4 +24,9 @@ struct AccountService {
             failType: ChangePasswordFailData.self
         )
     }
+    
+    static func deleteAccount() async throws {
+        let url = Constants.baseURL.appendingPathComponent("account")
+        let _: NoContent = try await Networking.delete(url, failType: NoContent.self)
+    }
 }

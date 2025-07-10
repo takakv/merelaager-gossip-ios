@@ -33,7 +33,11 @@ struct SettingsView: View {
                             showDeleteConfirmation = true
                         }
                         .alert("Kustuta konto?", isPresented: $showDeleteConfirmation) {
-                            Button("Kustuta", role: .destructive, action: {})
+                            Button("Kustuta", role: .destructive) {
+                                Task {
+                                    await deleteAccount()
+                                }
+                            }
                             Button("Tühista", role: .cancel) { }
                         } message: {
                             Text("Koos kontoga kustutatakse ka kõik sinu postitused. Sinu kontot ega postitusi taastada ei saa.")
@@ -57,6 +61,15 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showChangePassword) {
             NewPasswordView()
+        }
+    }
+    
+    func deleteAccount() async {
+        do {
+            try await AccountService.deleteAccount()
+            sessionManager.signOut()
+        } catch {
+            print("DEBUG: \(error)")
         }
     }
 }
