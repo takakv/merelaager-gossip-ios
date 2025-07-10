@@ -19,3 +19,8 @@ struct JSendError: Decodable {
     let status: String
     let message: String
 }
+
+struct JSendFailError<F>: Error {
+    let statusCode: Int
+    let data: F
+}

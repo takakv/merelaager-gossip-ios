@@ -11,7 +11,6 @@ enum NetworkingError: Error {
     case decodingFailed(innerError: DecodingError)
     case invalidStatusCode(statusCode: Int)
     case requestFailed(innerError: URLError)
-    case jsendFail(statusCode: Int, data: Any)
     case jsendError(statusCode: Int, message: String)
     case otherError(innerError: Error)
     case emptyResponseButContentExpected
@@ -37,6 +36,7 @@ enum Networking {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
         do {
             request.httpBody = try JSONEncoder().encode(body)
         } catch let error as EncodingError {
@@ -44,6 +44,7 @@ enum Networking {
         } catch {
             throw NetworkingError.otherError(innerError: error)
         }
+
         return try await perform(request, failType: failType)
     }
     
@@ -100,7 +101,6 @@ enum Networking {
         _ request: URLRequest,
         failType: F.Type
     ) async throws -> T {
-        do {
             let (data, response) = try await URLSession.shared.data(for: request)
             
             guard let httpResponse = response as? HTTPURLResponse else {
@@ -136,14 +136,16 @@ enum Networking {
                 }
                 
             case 400...499:
+                let failResponse: JSendResponse<F>
                 do {
-                    let failResponse = try JSONDecoder().decode(JSendResponse<F>.self, from: data)
-                    throw NetworkingError.jsendFail(statusCode: statusCode, data: failResponse.data)
+                    failResponse = try JSONDecoder().decode(JSendResponse<F>.self, from: data)
                 } catch let decodingError as DecodingError {
                     throw NetworkingError.decodingFailed(innerError: decodingError)
                 } catch {
                     throw NetworkingError.otherError(innerError: error)
                 }
+
+                throw JSendFailError(statusCode: statusCode, data: failResponse.data)
 
             case 500...599:
                 do {
@@ -158,11 +160,5 @@ enum Networking {
             default:
                 throw NetworkingError.invalidStatusCode(statusCode: statusCode)
             }
-            
-        } catch let urlError as URLError {
-            throw NetworkingError.requestFailed(innerError: urlError)
-        } catch {
-            throw NetworkingError.otherError(innerError: error)
-        }
     }
 }

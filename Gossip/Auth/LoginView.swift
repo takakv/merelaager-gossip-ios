@@ -11,6 +11,7 @@ struct LoginView: View {
     
     @State private var username = ""
     @State private var password = ""
+    @State private var errorMessage: String?
     
     var body: some View {
         NavigationStack {
@@ -38,7 +39,16 @@ struct LoginView: View {
                         .padding(.horizontal, 24)
                 }
                 
-                Button { signIn() } label: {
+                if let errorMessage = errorMessage {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                }
+                
+                Button {
+                    Task { await signIn() }
+                } label: {
                     Text("Logi sisse")
                         .font(.headline)
                         .foregroundColor(.white)
@@ -57,8 +67,16 @@ struct LoginView: View {
 }
 
 private extension LoginView {
-    func signIn() {
-        Task { await sessionManager.login(username: username, password: password) }
+    func signIn() async {
+        do {
+            try await sessionManager.login(username: username, password: password)
+        } catch let error as JSendFailError<LoginFailResponseData> {
+            print("DEBUG: \(error)")
+            errorMessage = error.data.message
+        } catch {
+            print("DEBUG: \(error)")
+            errorMessage = "Viga serveriga ühenduse loomisel."
+        }
     }
     
     var formIsValid: Bool {

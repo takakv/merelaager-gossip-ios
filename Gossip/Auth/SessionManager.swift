@@ -8,6 +8,15 @@ import Foundation
 
 typealias LoginResponse = JSendResponse<UserData>
 
+struct LoginReqBody: Codable {
+    let username: String
+    let password: String
+}
+
+struct LoginFailResponseData: Decodable {
+    let message: String
+}
+
 struct UserData: Decodable {
     let username: String
     let role: String
@@ -75,36 +84,10 @@ class SessionManager {
         }
     }
     
-    func login(username: String, password: String) async {
-        do {
-            let url = Constants.baseURL.appendingPathComponent("auth/login")
-            
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            let body = ["username": username, "password": password]
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            let config = URLSessionConfiguration.default
-            config.httpCookieStorage = HTTPCookieStorage.shared
-            let session = URLSession(configuration: config)
-            
-            let (data, response) = try await session.data(for: request)
-            
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                throw URLError(.userAuthenticationRequired)
-            }
-            
-//            do {
-//                try JSONDecoder().decode(FetchUserResponse.self, from: data)
-//            } catch {
-//                print(error)
-//                throw URLError(.badServerResponse)
-//            }
-        } catch {
-            print("DEBUG: Sign in error: \(error.localizedDescription)")
-        }
-        
+    func login(username: String, password: String) async throws {
+        let url = Constants.baseURL.appendingPathComponent("auth/login")
+        let body = LoginReqBody(username: username, password: password)
+        let _: NoContent = try await Networking.post(url, body: body, failType: LoginFailResponseData.self)
         await getCurrentUser()
     }
     
