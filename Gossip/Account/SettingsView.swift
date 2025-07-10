@@ -19,8 +19,13 @@ struct SettingsView: View {
                     Section {
                         VStack(alignment: .leading) {
                             Text(sessionManager.currentUser?.username ?? "Anonüümne kasutaja")
-                            Text("Postitamine lubatud.")
-                                .font(.footnote)
+                            if (sessionManager.currentUser?.role != "READER") {
+                                Text("Postitamine lubatud")
+                                    .font(.footnote)
+                            } else {
+                                Text("Anonüümne kasutaja: postitamine keelatud")
+                                    .font(.footnote)
+                            }
                         }
                     }
                     

@@ -17,8 +17,10 @@ struct ContentView: View {
             Tab("Kõva kumu", systemImage: "heart") {
                 PostsView(title: "Kõva kumu", viewModel: PostsViewModel(endpoint: "/liked"))
             }
-            Tab("Minu", systemImage: "rectangle.stack.badge.person.crop") {
-                PostsView(title: "Minu postitused", viewModel: PostsViewModel(endpoint: "/my"))
+            if (sessionManager.currentUser?.role != "READER") {
+                Tab("Minu", systemImage: "rectangle.stack.badge.person.crop") {
+                    PostsView(title: "Minu postitused", viewModel: PostsViewModel(endpoint: "/my"))
+                }
             }
             if (sessionManager.currentUser?.role == "ADMIN") {
                 Tab("Ootel", systemImage: "document.badge.clock") {

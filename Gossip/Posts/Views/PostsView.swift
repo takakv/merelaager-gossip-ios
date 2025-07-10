@@ -7,6 +7,8 @@
 import SwiftUI
 
 struct PostsView: View {
+    @Environment(SessionManager.self) private var sessionManager
+    
     let title: String
     @State var viewModel: PostsViewModel
     
@@ -32,8 +34,10 @@ struct PostsView: View {
                 }
             }
 
-            FloatingCreatePostButton {
-                showCreatePost.toggle()
+            if (sessionManager.currentUser?.role != "READER") {
+                FloatingCreatePostButton {
+                    showCreatePost.toggle()
+                }
             }
         }
         .sheet(isPresented: $showCreatePost) {
