@@ -99,16 +99,20 @@ struct LoginView: View {
                 Text("Kutsekood")
             }
             .textInputAutocapitalization(.never)
-            .onReceive(Just(token)) { newValue in
-                let uppercased = newValue.uppercased()
-                if (newValue.count == 4) {
-                    token.append("-")
+            .onChange(of: token) { oldValue, newValue in
+                let isDeleting = newValue.count < oldValue.count
+                var uppercased = newValue.uppercased()
+                
+                if uppercased.count > 9 {
+                    uppercased = String(uppercased.prefix(9))
                 }
-                if uppercased != newValue {
+
+                if uppercased.count == 4 && !isDeleting {
+                    uppercased.append("-")
+                }
+
+                if token != uppercased {
                     token = uppercased
-                }
-                if newValue.count > 9 {
-                    token = String(uppercased.prefix(9))
                 }
             }
             Button("Tühista", role: .cancel) {
@@ -120,7 +124,7 @@ struct LoginView: View {
                     await checkToken()
                 }
             }
-            .disabled(token.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .disabled(token.trimmingCharacters(in: .whitespacesAndNewlines).count != 9)
         } message: {
             Text("Sisesta konto loomiseks vajalik kutsekood, mille said kasvatajatelt.")
         }
@@ -137,7 +141,6 @@ private extension LoginView {
         do {
             try await sessionManager.login(username: username, password: password)
         } catch let error as JSendFailError<LoginFailResponseData> {
-            print("DEBUG: \(error)")
             errorMessage = error.data.message
             token = ""
         } catch {
