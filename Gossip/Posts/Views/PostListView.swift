@@ -59,10 +59,8 @@ struct PostListView: View {
         do {
             if (wasLiked) {
                 try await PostService.unlikePost(postId: post.id, userId: userId)
-                print("DEBUG: Unliked post \(post.id)")
             } else {
                 try await PostService.likePost(postId: post.id, userId: userId)
-                print("DEBUG: Liked post \(post.id)")
             }
         } catch {
             post.isLiked = wasLiked

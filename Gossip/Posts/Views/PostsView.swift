@@ -8,15 +8,16 @@ import SwiftUI
 
 struct PostsView: View {
     @Environment(SessionManager.self) private var sessionManager
-    
+
     let title: String
     @State var viewModel: PostsViewModel
-    
+
     @State private var showCreatePost = false
-    
+    @State private var postIsOpen = false
+
     var body: some View {
-        ZStack {
-            NavigationStack {
+        NavigationStack {
+            ZStack {
                 VStack {
                     if viewModel.posts.isEmpty {
                         Text("Postitusi pole.")
@@ -32,11 +33,10 @@ struct PostsView: View {
                         viewModel.resetAndFetch()
                     }
                 }
-            }
-
-            if (sessionManager.currentUser?.role != "READER") {
-                FloatingCreatePostButton {
-                    showCreatePost.toggle()
+                if sessionManager.currentUser?.role != "READER" && !postIsOpen {
+                    FloatingCreatePostButton {
+                        showCreatePost = true
+                    }
                 }
             }
         }
