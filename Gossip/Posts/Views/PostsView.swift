@@ -30,7 +30,9 @@ struct PostsView: View {
                 .navigationTitle(title)
                 .onAppear {
                     if viewModel.posts.isEmpty {
-                        viewModel.resetAndFetch()
+                        Task {
+                            await viewModel.resetAndFetch()
+                        }
                     }
                 }
                 if sessionManager.currentUser?.role != "READER" && !postIsOpen {

@@ -40,6 +40,7 @@ struct User: Identifiable, Decodable {
 
 typealias FetchUserResponse = JSendResponse<User>
 
+@MainActor
 @Observable
 class SessionManager {
     var isLoggedIn: Bool = false

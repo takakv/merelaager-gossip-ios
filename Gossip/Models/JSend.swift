@@ -20,7 +20,7 @@ struct JSendError: Decodable {
     let message: String
 }
 
-struct JSendFailError<F>: Error {
+struct JSendFailError<F: Sendable>: Error {
     let statusCode: Int
     let data: F
 }

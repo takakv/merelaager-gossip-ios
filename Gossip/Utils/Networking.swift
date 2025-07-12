@@ -19,7 +19,7 @@ enum NetworkingError: Error {
 struct NoContent: Encodable, Decodable {}
 
 enum Networking {
-    static func get<T: Decodable, F: Decodable>(
+    static func get<T: Decodable, F: Decodable & Sendable>(
         _ url: URL,
         failType: F.Type
     ) async throws -> T {
@@ -28,7 +28,7 @@ enum Networking {
         return try await perform(request, failType: failType)
     }
     
-    static func post<T: Decodable, B: Encodable, F: Decodable>(
+    static func post<T: Decodable, B: Encodable, F: Decodable & Sendable>(
         _ url: URL,
         body: B,
         failType: F.Type
@@ -48,7 +48,7 @@ enum Networking {
         return try await perform(request, failType: failType)
     }
     
-    static func patch<T: Decodable, B: Encodable, F: Decodable>(
+    static func patch<T: Decodable, B: Encodable, F: Decodable & Sendable>(
         _ url: URL,
         body: B,
         failType: F.Type
@@ -66,7 +66,7 @@ enum Networking {
         return try await perform(request, failType: failType)
     }
     
-    static func put<T: Decodable, B: Encodable, F: Decodable>(
+    static func put<T: Decodable, B: Encodable, F: Decodable & Sendable>(
         _ url: URL,
         body: B,
         failType: F.Type
@@ -88,7 +88,7 @@ enum Networking {
         return try await perform(request, failType: failType)
     }
     
-    static func delete<T: Decodable, F: Decodable>(
+    static func delete<T: Decodable, F: Decodable & Sendable>(
         _ url: URL,
         failType: F.Type
     ) async throws -> T {
@@ -97,7 +97,7 @@ enum Networking {
         return try await perform(request, failType: failType)
     }
     
-    private static func perform<T: Decodable, F: Decodable>(
+    private static func perform<T: Decodable, F: Decodable & Sendable>(
         _ request: URLRequest,
         failType: F.Type
     ) async throws -> T {
