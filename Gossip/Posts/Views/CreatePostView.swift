@@ -57,14 +57,26 @@ struct CreatePostView: View {
                     
                     Text("Pilt")
                         .font(.headline)
-                    PhotosPicker(selection: $selectedPhotoItem, matching: .images, photoLibrary: .shared()) {
-                        HStack {
-                            Image(systemName: "photo")
-                            Text("Vali pilt")
+
+                    HStack {
+                        PhotosPicker(selection: $selectedPhotoItem, matching: .images, photoLibrary: .shared()) {
+                            HStack {
+                                Image(systemName: "photo")
+                                Text("Vali pilt")
+                            }
+                            .padding()
+                            .background(Color.pink.opacity(0.1))
+                            .cornerRadius(8)
                         }
-                        .padding()
-                        .background(Color.pink.opacity(0.1))
-                        .cornerRadius(8)
+                        
+                        if selectedPhotoItem != nil {
+                            Button {
+                                selectedPhotoItem = nil
+                                selectedImage = nil
+                            } label: {
+                                Text("Eemalda pilt")
+                            }
+                        }
                     }
 
                     if let selectedImage = selectedImage {
@@ -154,9 +166,12 @@ struct CreatePostView: View {
         isSubmitting = true
         
         do {
-            let createdPostId = try await PostService.createPost(title: title, content: content, image: image)
-            print("DEBUG: Created post with ID \(createdPostId)")
+            let _ = try await PostService.createPost(title: title, content: content, image: image)
             dismiss()
+        } catch let error as JSendFailError<UploadImageFailResponseData> {
+            errorMessage = error.data.message
+        } catch let error as JSendFailError<CreatePostFailResponseData> {
+            errorMessage = error.data.message
         } catch {
             print("DEBUG: \(error)")
             errorMessage = error.localizedDescription

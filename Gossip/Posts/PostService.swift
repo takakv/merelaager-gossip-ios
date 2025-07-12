@@ -11,8 +11,7 @@ struct CreatePostResponseData: Decodable {
 }
 
 struct CreatePostFailResponseData: Decodable {
-    let format: String?
-    let user: String?
+    let message: String
 }
 
 struct CreatePostRequestBody: Codable {
@@ -90,9 +89,15 @@ struct PostService {
         }
 
         guard (200...299).contains(httpResponse.statusCode) else {
-            let failure = try? JSONDecoder().decode(UploadImageFailResponse.self, from: data)
-            print("DEBUG: Image upload failed: \(failure?.data.message ?? "Unknown error")")
-            throw URLError(.badServerResponse)
+            let failResponse: JSendResponse<UploadImageFailResponseData>
+            do {
+                failResponse = try JSONDecoder().decode(UploadImageFailResponse.self, from: data)
+            } catch let decodingError as DecodingError {
+                throw NetworkingError.decodingFailed(innerError: decodingError)
+            } catch {
+                throw NetworkingError.otherError(innerError: error)
+            }
+            throw JSendFailError(statusCode: httpResponse.statusCode, data: failResponse.data)
         }
 
         return try JSONDecoder().decode(UploadImageResponse.self, from: data)
