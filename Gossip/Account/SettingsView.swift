@@ -11,6 +11,7 @@ struct SettingsView: View {
     
     @State private var showChangePassword = false
     @State private var showDeleteConfirmation = false
+    @State private var username = ""
     
     var body: some View {
         ZStack {
@@ -23,13 +24,23 @@ struct SettingsView: View {
                                 Text("Postitamine lubatud")
                                     .font(.footnote)
                             } else {
-                                Text("Anonüümne kasutaja: postitamine keelatud")
+                                Text("Postitamine keelatud")
                                     .font(.footnote)
+                            }
+                        }
+                    } footer: {
+                        if (sessionManager.currentUser?.role != "READER") {
+                            EmptyView()
+                            // Text("Sinu kasutajat näevad ainult kasvatajad.")
+                        } else {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Eesti Vabariigi seaduse järgi ei tohi alla 13-aastased lapsed ilma vanema nõusolekuta oma (isiku)andmeid digikeskkonnas jagada.")
+                                Text("Kuna meil puudub sinu vanemate nõusolek, ei saa me lubada sul postitada, et sa kogemata isikustavat infot ei jagaks.")
                             }
                         }
                     }
                     
-                    Section("Konto") {
+                    Section {
                         Button("Vaheta salasõna") {
                             showChangePassword.toggle()
                         }
@@ -38,16 +49,24 @@ struct SettingsView: View {
                             showDeleteConfirmation = true
                         }
                         .alert("Kustuta konto?", isPresented: $showDeleteConfirmation) {
-                            Button("Kustuta", role: .destructive) {
+                            TextField(text: $username) {
+                                Text("Kasutajanimi")
+                            }
+                            Button("Kustuta konto", role: .destructive) {
                                 Task {
                                     await deleteAccount()
                                 }
                             }
+                            .disabled(sessionManager.currentUser?.username != username)
                             Button("Tühista", role: .cancel) { }
                         } message: {
-                            Text("Koos kontoga kustutatakse ka kõik sinu postitused. Sinu kontot ega postitusi taastada ei saa.")
+                            Text("Konto kustutamiseks sisesta oma kasutajanimi.")
                         }
                         .tint(.blue)
+                    } header: {
+                        Text("Konto")
+                    } footer: {
+                        Text("Koos kontoga kustutatakse ka kõik sinu postitused. Sinu kontot ega postitusi taastada ei saa.")
                     }
                     
                     Section {

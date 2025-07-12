@@ -18,27 +18,6 @@ struct NewPasswordView: View {
         NavigationView {
             VStack {
                 Form {
-                    Section {
-                        VStack {
-                            Image(systemName: "key")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 60, height: 60)
-                                .foregroundColor(.pink)
-                                .padding(.top, 8)
-                            
-                            Text("Uus salasõna")
-                                .font(.title)
-                                .bold()
-                                .padding(.bottom, 4)
-                            
-                            Text("Võimalusel lase Apple'i „Passwords“ rakendusel salasõna genereerida.")
-                                .padding(.bottom, 8)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .multilineTextAlignment(.center)
-                    }
-                    
                     if let errorMessage = errorMessage {
                         Section {
                             Text(errorMessage)
@@ -51,10 +30,16 @@ struct NewPasswordView: View {
                             .textContentType(.newPassword)
                         SecureField("Korda salasõna", text: $repeatPassword)
                             .textContentType(.newPassword)
+                    } header: {
+                      Text("Vaheta salasõna")
                     } footer: {
-                        Text("Salasõna peab olema vähemalt 8 tähemärki pikk ja sisaldama vähemalt ühte numbrit, ühte suurt tähte ja ühte väikest tähte.")
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Salasõna peab olema vähemalt 8 tähemärki pikk ja sisaldama vähemalt ühte numbrit, ühte suurt tähte ja ühte väikest tähte.")
+                            Text("Võimalusel lase Apple'i „Passwords“ rakendusel salasõna genereerida.")
+                        }
                     }
                 }
+                .scrollBounceBehavior(.basedOnSize)
                 .listStyle(.insetGrouped)
                 
                 Button {
