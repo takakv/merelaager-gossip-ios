@@ -13,7 +13,17 @@ struct LoginReqBody: Codable {
     let password: String
 }
 
+struct SignupReqBody: Codable {
+    let token: String
+    let username: String
+    let password: String
+}
+
 struct LoginFailResponseData: Decodable {
+    let message: String
+}
+
+struct SignupFailResponseData: Decodable {
     let message: String
 }
 
@@ -88,6 +98,13 @@ class SessionManager {
         let url = Constants.baseURL.appendingPathComponent("auth/login")
         let body = LoginReqBody(username: username, password: password)
         let _: NoContent = try await Networking.post(url, body: body, failType: LoginFailResponseData.self)
+        await getCurrentUser()
+    }
+    
+    func signUp(token: String, username: String, password: String) async throws {
+        let url = Constants.baseURL.appendingPathComponent("users")
+        let body = SignupReqBody(token: token, username: username, password: password)
+        let _: NoContent = try await Networking.post(url, body: body, failType: SignupFailResponseData.self)
         await getCurrentUser()
     }
     
