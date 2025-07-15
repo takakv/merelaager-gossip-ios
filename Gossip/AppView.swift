@@ -8,11 +8,13 @@ import SwiftUI
 
 struct AppView: View {
     @Environment(SessionManager.self) private var sessionManager
-    
+
     var body: some View {
         Group {
             if sessionManager.isLoggedIn {
-                ContentView()
+                ScreenshotPreventView {
+                    ContentView()
+                }
             } else {
                 LoginView()
             }
