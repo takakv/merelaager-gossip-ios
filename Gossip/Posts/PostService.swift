@@ -25,7 +25,6 @@ struct PublishPostRequestBody: Codable {
 }
 
 struct FetchPostFailResponseData: Decodable {
-    let postId: String
     let message: String
 }
 
