@@ -20,9 +20,15 @@ struct PostsView: View {
             ZStack {
                 VStack {
                     if viewModel.posts.isEmpty {
-                        Text("Postitusi pole.")
-                            .foregroundColor(.secondary)
-                            .padding()
+                        ScrollView {
+                            Text("Postitusi pole.")
+                                .foregroundColor(.secondary)
+                        }
+                        .refreshable {
+                            Task {
+                                await viewModel.resetAndFetch()
+                            }
+                        }
                     } else {
                         PostListView(viewModel: viewModel)
                     }
