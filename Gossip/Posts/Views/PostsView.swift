@@ -15,11 +15,17 @@ struct PostsView: View {
     @State private var showCreatePost = false
     @State private var postIsOpen = false
 
+    @State private var initialLoadInProgress = true
+
     var body: some View {
         NavigationStack {
             ZStack {
                 VStack {
-                    if viewModel.posts.isEmpty {
+                    if initialLoadInProgress {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle())
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if viewModel.posts.isEmpty {
                         ScrollView {
                             Text("Postitusi pole.")
                                 .foregroundColor(.secondary)
@@ -38,6 +44,7 @@ struct PostsView: View {
                     if viewModel.posts.isEmpty {
                         Task {
                             await viewModel.resetAndFetch()
+                            initialLoadInProgress = false
                         }
                     }
                 }
