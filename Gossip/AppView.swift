@@ -21,8 +21,9 @@ struct AppView: View {
             }
         }
         .task {
-            // Artifical delay for smoother app launch
-            try? await Task.sleep(nanoseconds: 200_000_000)
+            // Cookie check to avoid displaying
+            // the splash screen for non-logged in users.
+            sessionManager.checkForCookies()
             await sessionManager.getCurrentUser()
         }
     }

@@ -51,8 +51,30 @@ enum AppAuthState {
 class SessionManager {
     var currentUser: User?
     var appLoadingState: AppAuthState = .loading
+    
+    // This is useful to avoid displaying the splash screen when the user
+    // is certainly logged out.
+    func checkForCookies() {
+        if let cookies = HTTPCookieStorage.shared.cookies {
+            for cookie in cookies where !cookie.isExpired {
+                if cookie.name == "sessionId" {
+                    return
+                }
+            }
+        }
+        appLoadingState = .loggedOut
+    }
 
-    func getCurrentUser() async {
+    func getCurrentUser(override: Bool = false) async {
+        // We need an override, since this is also used to check for session state after login/signup.
+        if (!override && appLoadingState == .loggedOut) {
+            return
+        }
+        
+        // Artifical delay to display the splash screen for slightly longer.
+        // This prevents a confusing flash for fast network speeds.
+        // try? await Task.sleep(nanoseconds: 200_000_000)
+
         let url = Constants.baseURL.appendingPathComponent("account")
 
         do {
@@ -105,7 +127,7 @@ class SessionManager {
             body: body,
             failType: LoginFailResponseData.self
         )
-        await getCurrentUser()
+        await getCurrentUser(override: true)
     }
 
     func signUp(token: String, username: String, password: String) async throws
@@ -121,7 +143,7 @@ class SessionManager {
             body: body,
             failType: SignupFailResponseData.self
         )
-        await getCurrentUser()
+        await getCurrentUser(override: true)
     }
 
     func signOut() {
