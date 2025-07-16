@@ -11,15 +11,20 @@ struct AppView: View {
 
     var body: some View {
         Group {
-            if sessionManager.isLoggedIn {
-                ScreenshotPreventView {
-                    ContentView()
-                }
-            } else {
+            switch sessionManager.appLoadingState {
+            case .loading:
+                SplashView()
+            case .loggedIn:
+                ContentView()
+            case .loggedOut:
                 LoginView()
             }
         }
-        .task { await sessionManager.getCurrentUser() }
+        .task {
+            // Artifical delay for smoother app launch
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            await sessionManager.getCurrentUser()
+        }
     }
 }
 
