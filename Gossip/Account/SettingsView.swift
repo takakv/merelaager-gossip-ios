@@ -5,6 +5,7 @@
 //
 
 import SwiftUI
+@preconcurrency import UserNotifications
 
 struct SettingsView: View {
     @Environment(SessionManager.self) private var sessionManager
@@ -12,6 +13,8 @@ struct SettingsView: View {
     @State private var showChangePassword = false
     @State private var showDeleteConfirmation = false
     @State private var username = ""
+
+    @State private var notificationsDenied = false
 
     var body: some View {
         ZStack {
@@ -112,12 +115,34 @@ struct SettingsView: View {
                         .font(.footnote)
                         .foregroundColor(.secondary)
                     }
+
+                    if notificationsDenied {
+                        Section {
+                            Button("Luba teavitused") {
+                                Task {
+                                    await openOsNotificationSettings()
+                                }
+                            }
+                            .tint(.blue)
+                        } header: {
+                            Text("Teavitused")
+                        } footer: {
+                            Text(
+                                "Teavitused saad sisse lülitada iOS-i seadetes."
+                            )
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                        }
+                    }
                 }
                 .navigationTitle("Konto")
             }
         }
         .sheet(isPresented: $showChangePassword) {
             NewPasswordView()
+        }
+        .task {
+            await checkNotificationPermissionStatus()
         }
     }
 
@@ -127,6 +152,24 @@ struct SettingsView: View {
             sessionManager.signOut()
         } catch {
             print("DEBUG: \(error)")
+        }
+    }
+
+    func checkNotificationPermissionStatus() async {
+        let notificationCenter = UNUserNotificationCenter.current()
+        let currentSettings = await notificationCenter.notificationSettings()
+        notificationsDenied = currentSettings.authorizationStatus == .denied
+    }
+
+    func openOsNotificationSettings() async {
+        if notificationsDenied {
+            if let url = URL(
+                string: UIApplication.openNotificationSettingsURLString
+            ) {
+                await MainActor.run {
+                    UIApplication.shared.open(url)
+                }
+            }
         }
     }
 }
