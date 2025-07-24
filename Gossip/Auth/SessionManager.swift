@@ -32,7 +32,7 @@ struct UserData: Decodable {
     let role: String
 }
 
-struct User: Identifiable, Decodable {
+struct User: Identifiable, Decodable, Encodable {
     let id: String
     let username: String
     let role: String
@@ -52,6 +52,12 @@ class SessionManager {
     var currentUser: User?
     var appLoadingState: AppAuthState = .loading
     
+    init() {
+        if let cachedUser = self.loadPersistedUser() {
+            currentUser = cachedUser
+        }
+    }
+    
     // This is useful to avoid displaying the splash screen when the user
     // is certainly logged out.
     func checkForCookies() {
@@ -63,6 +69,21 @@ class SessionManager {
             }
         }
         appLoadingState = .loggedOut
+    }
+    
+    func persistUser(_ user: User) {
+        if let encoded = try? JSONEncoder().encode(user) {
+            UserDefaults.standard.set(encoded, forKey: "currentUser")
+        }
+    }
+    
+    func loadPersistedUser() -> User? {
+        guard let data = UserDefaults.standard.data(forKey: "currentUser"),
+              let user = try? JSONDecoder().decode(User.self, from: data)
+        else {
+            return nil
+        }
+        return user
     }
 
     func getCurrentUser(override: Bool = false) async {
@@ -101,10 +122,12 @@ class SessionManager {
                     role: userData.role
                 )
                 appLoadingState = .loggedIn
+                persistUser(self.currentUser!)
                 return
             case 401:
                 currentUser = nil
                 appLoadingState = .loggedOut
+                UserDefaults.standard.removeObject(forKey: "currentUser")
                 return
             case 500..<600:
                 print("DEBUG: Server error: \(httpResponse.statusCode)")
@@ -154,6 +177,7 @@ class SessionManager {
 
         currentUser = nil
         appLoadingState = .loggedOut
+        UserDefaults.standard.removeObject(forKey: "currentUser")
     }
 }
 
